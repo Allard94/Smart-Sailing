@@ -25,6 +25,7 @@ extern "C"
 using namespace std;
 
 sbp_state_t sbp_state;
+rtk_t rtk;
 char *serial_port_name = NULL;
 struct sp_port *piksi_port = NULL;
 
@@ -47,6 +48,7 @@ static sbp_msg_callbacks_node_t heartbeat_callback_node;
 void usage(char *prog_name) {
   fprintf(stderr, "usage: %s [-p serial port]\n", prog_name);
 }
+
 
 
 void setup_port()
@@ -145,11 +147,29 @@ u32 piksi_port_read(u8 *buff, u32 n, void *context)
   return result;
 }
 
+
+static void initx(rtk_t *rtk, double xi, double var, int i)
+{
+    int j;
+    rtk->x[i]=xi;
+    for (j=0;j<rtk->nx;j++) {
+        rtk->P[i+j*rtk->nx]=rtk->P[j+i*rtk->nx]=i==j?var:0.0;
+    }
+}
+
 int main(int argc, char **argv)
 {
+
+  prcopt_t copt = prcopt_default;
+  copt.dynamics = 2;
+
+  rtkinit(&rtk, &copt);
+  rtk.x[0] = 2;
   int opt;
   int result = 0;
-
+  FILE * pFile;
+  pFile = fopen ("myfile.txt","w");
+  pppoutsolstat(&rtk, 3, pFile);
   //sbp_state_t s;
 
   if (argc <= 1) {
