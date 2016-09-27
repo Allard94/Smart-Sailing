@@ -25,7 +25,6 @@ extern "C"
 using namespace std;
 
 sbp_state_t sbp_state;
-rtk_t rtk;
 char *serial_port_name = NULL;
 struct sp_port *piksi_port = NULL;
 
@@ -159,18 +158,24 @@ static void initx(rtk_t *rtk, double xi, double var, int i)
 
 int main(int argc, char **argv)
 {
-
+  rtk_t rtk;
   prcopt_t copt = prcopt_default;
-  copt.dynamics = 2;
+  obsd_t obs;
+  nav_t nav;
+  copt.mode = 6;
+  copt.tropopt = 3;
+  copt.dynamics = 1;
 
   rtkinit(&rtk, &copt);
-  rtk.x[0] = 2;
+  //rtk.x[0] = 2;
   int opt;
   int result = 0;
   FILE * pFile;
   pFile = fopen ("myfile.txt","w");
-  pppoutsolstat(&rtk, 3, pFile);
+  //pppoutsolstat(&rtk, 3, pFile);
   //sbp_state_t s;
+  fclose(pFile);
+  rtkpos(&rtk, &obs, 2, &nav);
 
   if (argc <= 1) {
     usage(argv[0]);
