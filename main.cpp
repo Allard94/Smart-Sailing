@@ -158,15 +158,25 @@ static void initx(rtk_t *rtk, double xi, double var, int i)
 
 int main(int argc, char **argv)
 {
+
   rtk_t rtk;
   prcopt_t copt = prcopt_default;
-  obsd_t obs;
+  obsd_t obds;
+  obs_t obs;
   nav_t nav;
+  sta_t sta;
+  rnxctr_t rnx;
   copt.mode = 6;
   copt.tropopt = 3;
   copt.dynamics = 1;
-
+  cout << MAXSAT << endl;
   rtkinit(&rtk, &copt);
+  init_rnxctr(&rnx);
+  char oopt;
+  const char *rinexfile = "Local-20140406-035808.obs";
+  const char *sp3file = "igu19161_00.sp3";
+  //readrnx(rinexfile, 1, &oopt, &rnx.obs, &rnx.nav, &rnx.sta);
+  readsp3(sp3file, &nav, 1);
   //rtk.x[0] = 2;
   int opt;
   int result = 0;
@@ -175,8 +185,11 @@ int main(int argc, char **argv)
   //pppoutsolstat(&rtk, 3, pFile);
   //sbp_state_t s;
   fclose(pFile);
-  rtkpos(&rtk, &obs, 2, &nav);
 
+  rtk.sol.rr[0] = 43;
+  rtk.sol.rr[1] = 42;
+  rtk.sol.rr[2] = 41;
+  rtkpos(&rtk, &obds, 3, &nav);
   if (argc <= 1) {
     usage(argv[0]);
     exit(EXIT_FAILURE);
@@ -220,20 +233,27 @@ int main(int argc, char **argv)
 
   sbp_setup();
 
-  sbp_register_callback(&sbp_state, SBP_MSG_HEARTBEAT, &heartbeat_callback, NULL,
-                          &heartbeat_callback_node);
+  //sbp_register_callback(&sbp_state, SBP_MSG_HEARTBEAT, &heartbeat_callback, NULL,
+  //                        &heartbeat_callback_node);
+
+
 
   while(1) {
     sbp_process(&sbp_state, &piksi_port_read);
+    //rtk.sol.rr[0] = pos_llh.lat;
+    //rtk.sol.rr[1] = pos_llh.lon;
+    //rtk.sol.rr[2] = pos_llh.height;
+    //rtkpos(&rtk, &obds, 3, &nav);
 
-    cout << "GPS TIME:" << endl;
-    cout << (float)gps_time.tow/1e3 << endl;
-    cout << "Absolute Position:" << endl;
-    cout << "Latitude: " << pos_llh.lat << endl;
-    cout << "longtitude: " << pos_llh.lon << endl;
-    cout << "Height: " << pos_llh.height << endl;
-    cout << "Temperature: " << device_monitor.cpu_temperature << endl;
-    cout << "Satellites: " << unsigned(pos_llh.n_sats) << endl;
+    cout << rtk.sol.rr[0] <<endl;
+//    cout << "GPS TIME:" << endl;
+//    cout << (float)gps_time.tow/1e3 << endl;
+//    cout << "Absolute Position:" << endl;
+//    cout << "Latitude: " << pos_llh.lat << endl;
+//    cout << "longtitude: " << pos_llh.lon << endl;
+//    cout << "Height: " << pos_llh.height << endl;
+//    cout << "Temperature: " << device_monitor.cpu_temperature << endl;
+//    cout << "Satellites: " << unsigned(pos_llh.n_sats) << endl;
 sleep(0.05);
 
 
