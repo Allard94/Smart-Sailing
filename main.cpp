@@ -166,30 +166,35 @@ int main(int argc, char **argv)
   nav_t nav;
   sta_t sta;
   rnxctr_t rnx;
+
   copt.mode = 6;
   copt.tropopt = 3;
   copt.dynamics = 1;
-  cout << MAXSAT << endl;
-  rtkinit(&rtk, &copt);
-  init_rnxctr(&rnx);
-  char oopt;
-  const char *rinexfile = "Local-20140406-035808.obs";
-  const char *sp3file = "igu19161_00.sp3";
-  //readrnx(rinexfile, 1, &oopt, &rnx.obs, &rnx.nav, &rnx.sta);
-  readsp3(sp3file, &nav, 1);
-  //rtk.x[0] = 2;
-  int opt;
-  int result = 0;
-  FILE * pFile;
-  pFile = fopen ("myfile.txt","w");
-  //pppoutsolstat(&rtk, 3, pFile);
-  //sbp_state_t s;
-  fclose(pFile);
 
   rtk.sol.rr[0] = 43;
   rtk.sol.rr[1] = 42;
   rtk.sol.rr[2] = 41;
+
+  char oopt;
+  const char *rinexfile = "Local-20140406-035808.obs";
+  const char *sp3file = "igu19161_00.sp3";
+  int opt;
+  int result = 0;
+
+
+  FILE * pFile;
+
+  rtkinit(&rtk, &copt);
+  init_rnxctr(&rnx);
+  readsp3(sp3file, &nav, 1);
   rtkpos(&rtk, &obds, 3, &nav);
+
+  //readrnx(rinexfile, 1, &oopt, &rnx.obs, &rnx.nav, &rnx.sta);
+  //pFile = fopen ("myfile.txt","w");
+  //pppoutsolstat(&rtk, 3, pFile);
+  //sbp_state_t s;
+  //fclose(pFile);
+
   if (argc <= 1) {
     usage(argv[0]);
     exit(EXIT_FAILURE);
@@ -255,56 +260,6 @@ int main(int argc, char **argv)
 //    cout << "Temperature: " << device_monitor.cpu_temperature << endl;
 //    cout << "Satellites: " << unsigned(pos_llh.n_sats) << endl;
 sleep(0.05);
-
-
-//
-//  str_i += sprintf(str + str_i, "\n\n\n\n");
-//
-//  /* Print GPS time. */
-//  str_i += sprintf(str + str_i, "GPS Time:\n");
-//  str_i += sprintf(str + str_i, "\tWeek\t\t: %6d\n", (int)gps_time.wn);
-//  sprintf(rj, "%6.2f", ((float)gps_time.tow)/1e3);
-//  str_i += sprintf(str + str_i, "\tSeconds\t: %9s\n", rj);
-//  str_i += sprintf(str + str_i, "\n");
-//
-//  /* Print absolute position. */
-//  str_i += sprintf(str + str_i, "Absolute Position:\n");
-//  sprintf(rj, "%4.10lf", pos_llh.lat);
-//  str_i += sprintf(str + str_i, "\tLatitude\t: %17s\n", rj);
-//  sprintf(rj, "%4.10lf", pos_llh.lon);
-//  str_i += sprintf(str + str_i, "\tLongitude\t: %17s\n", rj);
-//  sprintf(rj, "%4.10lf", pos_llh.height);
-//  str_i += sprintf(str + str_i, "\tHeight\t: %17s\n", rj);
-//  str_i += sprintf(str + str_i, "\tSatellites\t:     %02d\n", pos_llh.n_sats);
-//  str_i += sprintf(str + str_i, "\n");
-//
-//  /* Print NED (North/East/Down) baseline (position vector from base to rover). */
-//  str_i += sprintf(str + str_i, "Baseline (mm):\n");
-//  str_i += sprintf(str + str_i, "\tNorth\t\t: %6d\n", (int)baseline_ned.n);
-//  str_i += sprintf(str + str_i, "\tEast\t\t: %6d\n", (int)baseline_ned.e);
-//  str_i += sprintf(str + str_i, "\tDown\t\t: %6d\n", (int)baseline_ned.d);
-//  str_i += sprintf(str + str_i, "\n");
-//
-//  /* Print NED velocity. */
-//  str_i += sprintf(str + str_i, "Velocity (mm/s):\n");
-//  str_i += sprintf(str + str_i, "\tNorth\t\t: %6d\n", (int)vel_ned.n);
-//  str_i += sprintf(str + str_i, "\tEast\t\t: %6d\n", (int)vel_ned.e);
-//  str_i += sprintf(str + str_i, "\tDown\t\t: %6d\n", (int)vel_ned.d);
-//  str_i += sprintf(str + str_i, "\n");
-//
-//  /* Print Dilution of Precision metrics. */
-//  str_i += sprintf(str + str_i, "Dilution of Precision:\n");
-//  sprintf(rj, "%4.2f", ((float)dopss.gdop/100));
-//  str_i += sprintf(str + str_i, "\tGDOP\t\t: %7s\n", rj);
-//  sprintf(rj, "%4.2f", ((float)dopss.hdop/100));
-//  str_i += sprintf(str + str_i, "\tHDOP\t\t: %7s\n", rj);
-//  sprintf(rj, "%4.2f", ((float)dopss.pdop/100));
-//  str_i += sprintf(str + str_i, "\tPDOP\t\t: %7s\n", rj);
-//  sprintf(rj, "%4.2f", ((float)dopss.tdop/100));
-//  str_i += sprintf(str + str_i, "\tTDOP\t\t: %7s\n", rj);
-//  sprintf(rj, "%4.2f", ((float)dopss.vdop/100));
-//  str_i += sprintf(str + str_i, "\tVDOP\t\t: %7s\n", rj);
-//  str_i += sprintf(str + str_i, "\n");
 
   }
 
