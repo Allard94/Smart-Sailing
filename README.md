@@ -15,3 +15,10 @@ Smart Sailing project
  - sudo apt-get install git
 
 - Install libserialport (https://sigrok.org/wiki/Libserialport)
+ - sudo apt-get install dh-autoreconf
+ - clone libserialport (https://github.com/martinling/libserialport.git)
+ - cd libserialport
+ - $ ./autogen.sh
+ - $ ./configure
+ - $ make
+ - $ sudo make install
