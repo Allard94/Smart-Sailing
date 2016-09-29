@@ -166,31 +166,36 @@ int main(int argc, char **argv)
   nav_t nav;
   sta_t sta;
   rnxctr_t rnx;
+
   copt.mode = 6;
   copt.tropopt = 3;
   copt.dynamics = 1;
   copt.sateph = 1;
-  cout << MAXSAT << endl;
-  rtkinit(&rtk, &copt);
-  init_rnxctr(&rnx);
-  char oopt;
-  const char *rinexfile = "Local-20140406-035808.obs";
-  const char *sp3file = "igu19161_00.sp3";
-  //readrnx(rinexfile, 1, &oopt, &rnx.obs, &rnx.nav, &rnx.sta);
-  readsp3(sp3file, &nav, 1);
-  //rtk.x[0] = 2;
-  int opt;
-  int result = 0;
-  FILE * pFile;
-  pFile = fopen ("myfile.txt","w");
-  //pppoutsolstat(&rtk, 3, pFile);
-  //sbp_state_t s;
-  fclose(pFile);
 
   rtk.sol.rr[0] = 43;
   rtk.sol.rr[1] = 42;
   rtk.sol.rr[2] = 41;
+
+  char oopt;
+  const char *rinexfile = "Local-20140406-035808.obs";
+  const char *sp3file = "igu19161_00.sp3";
+  int opt;
+  int result = 0;
+
+
+  FILE * pFile;
+
+  rtkinit(&rtk, &copt);
+  init_rnxctr(&rnx);
+  readsp3(sp3file, &nav, 1);
   rtkpos(&rtk, &obds, 3, &nav);
+
+  //readrnx(rinexfile, 1, &oopt, &rnx.obs, &rnx.nav, &rnx.sta);
+  //pFile = fopen ("myfile.txt","w");
+  //pppoutsolstat(&rtk, 3, pFile);
+  //sbp_state_t s;
+  //fclose(pFile);
+
   if (argc <= 1) {
     usage(argv[0]);
     exit(EXIT_FAILURE);
