@@ -23,7 +23,7 @@ Smart Sailing project
  - make
  - sudo make install
  
-- LibSBP installeren
+- LibSBP installeren (https://swift-nav.github.io/libsbp/c/build/docs/html/install.html)
  - git clone https://github.com/swift-nav/libsbp.git
  - sudo apt-get install build-essential pkg-config cmake
  - cd libsbp/c/
