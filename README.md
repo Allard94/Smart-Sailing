@@ -9,5 +9,9 @@ Smart Sailing project
 
 - Install Eclipse (https://eclipse.org/)
  - Choose "Eclipse IDE for C/C++ Developers"
+ 
+- Install Git
+ - sudo apt-get update
+ - sudo apt-get install git
 
 - Install libserialport (https://sigrok.org/wiki/Libserialport)
