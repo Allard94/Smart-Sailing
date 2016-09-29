@@ -167,10 +167,10 @@ int main(int argc, char **argv)
   sta_t sta;
   rnxctr_t rnx;
 
-  copt.mode = 6;
-  copt.tropopt = 3;
-  copt.dynamics = 1;
-  copt.sateph = 1;
+  copt.mode = 6;				/* Option mode:               	Kinematic Mode    */
+  copt.tropopt = 3;				/* Troposphere option:        	ZTD estimation    */
+  copt.dynamics = 1;			/* Dynamics mode:             	1 = Velocity      */
+  copt.sateph = 1;				/* Satellite ephemeris/clock: 	Precise ephemeris */
 
   rtk.sol.rr[0] = 43;
   rtk.sol.rr[1] = 42;
