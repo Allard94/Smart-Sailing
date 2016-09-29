@@ -3,4 +3,5 @@ Smart Sailing project
 
 ## Installation
 
-1. Install libserialport (https://sigrok.org/wiki/Libserialport)
+1. Install eclipse (https://eclipse.org/)
+2. Install libserialport (https://sigrok.org/wiki/Libserialport)
