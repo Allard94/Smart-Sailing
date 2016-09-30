@@ -34,6 +34,7 @@ msg_vel_ned_t      vel_ned;
 msg_dops_t         dopss;
 msg_gps_time_t     gps_time;
 msg_device_monitor_t device_monitor;
+msg_pos_ecef_t pos_ecef;
 
 sbp_msg_callbacks_node_t pos_llh_node;
 sbp_msg_callbacks_node_t baseline_ned_node;
@@ -41,6 +42,7 @@ sbp_msg_callbacks_node_t vel_ned_node;
 sbp_msg_callbacks_node_t dops_node;
 sbp_msg_callbacks_node_t gps_time_node;
 sbp_msg_callbacks_node_t device_monitor_node;
+sbp_msg_callbacks_node_t pos_ecef_node;
 static sbp_msg_callbacks_node_t heartbeat_callback_node;
 
 
@@ -106,6 +108,11 @@ void sbp_gps_time_callback(u16 sender_id, u8 len, u8 msg[], void *context)
   gps_time = *(msg_gps_time_t *)msg;
 }
 
+void sbp_pos_ecef_callback(u16 sender_id, u8 len, u8 msg[], void *context)
+{
+  pos_ecef = *(msg_pos_ecef_t *)msg;
+}
+
 void heartbeat_callback(u16 sender_id, u8 len, u8 msg[], void *context)
 {
   (void)sender_id, (void)len, (void)msg, (void)context;
@@ -133,7 +140,11 @@ void sbp_setup(void)
                         NULL, &vel_ned_node);
   sbp_register_callback(&sbp_state, SBP_MSG_DOPS, &sbp_dops_callback,
                         NULL, &dops_node);
-  sbp_register_callback(&sbp_state, SBP_MSG_DEVICE_MONITOR, &sbp_device_monitor_callback, NULL, &device_monitor_node);
+  sbp_register_callback(&sbp_state, SBP_MSG_DEVICE_MONITOR, &sbp_device_monitor_callback,
+		  	  	  	  	NULL, &device_monitor_node);
+  sbp_register_callback(&sbp_state, SBP_MSG_POS_ECEF, &sbp_pos_ecef_callback,
+		  	  	  	  	NULL, &pos_ecef_node);
+
 }
 
 u32 piksi_port_read(u8 *buff, u32 n, void *context)
@@ -146,38 +157,45 @@ u32 piksi_port_read(u8 *buff, u32 n, void *context)
   return result;
 }
 
+void obsinit(obs_t *obs){
+	obsd_t data0={{0}};
+	obs->data = NULL;
+	if (!(obs->data=(obsd_t *)malloc(sizeof(obsd_t)*MAXOBS ))){
+		cout << "ERROR!" <<endl;
+	}
+	for (int i=0;i<64 ;i++) obs->data[i]=data0;
+}
 
-static void initx(rtk_t *rtk, double xi, double var, int i)
-{
-    int j;
-    rtk->x[i]=xi;
-    for (j=0;j<rtk->nx;j++) {
-        rtk->P[i+j*rtk->nx]=rtk->P[j+i*rtk->nx]=i==j?var:0.0;
-    }
+void obsassign(obs_t *obs){
+	int rcv = 1;
+	obs->nmax = 64;
+	obs->n = 9;
+	for(int i = 0; i < obs->nmax; i++){
+		obs->data[i].rcv = (unsigned char)rcv;
+	}
 }
 
 int main(int argc, char **argv)
 {
 
   rtk_t rtk;
-  prcopt_t copt = prcopt_default;
-  obsd_t obds;
+  rtk.opt = prcopt_default;
   obs_t obs;
   nav_t nav;
   sta_t sta;
   rnxctr_t rnx;
+  obsinit(&obs);
+  obsassign(&obs);
 
-  copt.mode = 6;				/* Option mode:               	Kinematic Mode    */
-  copt.tropopt = 3;				/* Troposphere option:        	ZTD estimation    */
-  copt.dynamics = 1;			/* Dynamics mode:             	1 = Velocity      */
-  copt.sateph = 1;				/* Satellite ephemeris/clock: 	Precise ephemeris */
 
-  rtk.sol.rr[0] = 43;
-  rtk.sol.rr[1] = 42;
-  rtk.sol.rr[2] = 41;
+  rtk.opt.mode = 6;					/* Option mode:               	Kinematic Mode    */
+  rtk.opt.tropopt = 3;				/* Troposphere option:        	ZTD estimation    */
+  rtk.opt.dynamics = 1;				/* Dynamics mode:             	Velocity      */
+  rtk.opt.sateph = 1;				/* Satellite ephemeris/clock: 	Precise ephemeris */
+  rtk.opt.nf = 3;					/* number of frequencies		L1 + L2 + L5 */
 
   char oopt;
-  const char *rinexfile = "Local-20140406-035808.obs";
+  const char *rinexfile = "Local-20160928-135925.obs";
   const char *sp3file = "igu19161_00.sp3";
   int opt;
   int result = 0;
@@ -185,15 +203,23 @@ int main(int argc, char **argv)
 
   FILE * pFile;
 
-  rtkinit(&rtk, &copt);
+  rtkinit(&rtk, &rtk.opt);
   init_rnxctr(&rnx);
   readsp3(sp3file, &nav, 1);
-  rtkpos(&rtk, &obds, 3, &nav);
 
-  //readrnx(rinexfile, 1, &oopt, &rnx.obs, &rnx.nav, &rnx.sta);
+  rtk.sol.rr[0] = -2700370;
+  rtk.sol.rr[1] = -4292500;
+  rtk.sol.rr[2] = 3855470;
+
+  rtkpos(&rtk, &obs.data[64], obs.n, &nav);
+
+
+  //Latitude: 37.4303
+  //longtitude: -122.172
+  //height: 70.1352
+  readrnx(rinexfile, 1, &rnx.opt[256], &rnx.obs, &rnx.nav, &rnx.sta);
   //pFile = fopen ("myfile.txt","w");
   //pppoutsolstat(&rtk, 3, pFile);
-  //sbp_state_t s;
   //fclose(pFile);
 
   if (argc <= 1) {
@@ -251,13 +277,16 @@ int main(int argc, char **argv)
     //rtk.sol.rr[2] = pos_llh.height;
     //rtkpos(&rtk, &obds, 3, &nav);
 
-    cout << rtk.sol.rr[0] <<endl;
+
 //    cout << "GPS TIME:" << endl;
 //    cout << (float)gps_time.tow/1e3 << endl;
 //    cout << "Absolute Position:" << endl;
-//    cout << "Latitude: " << pos_llh.lat << endl;
-//    cout << "longtitude: " << pos_llh.lon << endl;
-//    cout << "Height: " << pos_llh.height << endl;
+    cout << "Latitude: " << pos_llh.lat << endl;
+    cout << "longtitude: " << pos_llh.lon << endl;
+    cout << "height: " << pos_llh.height << endl;
+    cout << "x: " << pos_ecef.x << endl;
+    cout << "y: " << pos_ecef.y << endl;
+    cout << "z: " << pos_ecef.z << endl;
 //    cout << "Temperature: " << device_monitor.cpu_temperature << endl;
 //    cout << "Satellites: " << unsigned(pos_llh.n_sats) << endl;
 sleep(0.05);

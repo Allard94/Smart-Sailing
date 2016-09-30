@@ -24,6 +24,9 @@ C_DEPS :=
 # Every subdirectory with source files must be described here
 SUBDIRS := \
 . \
+rtklib/Debug \
+rtklib/Debug/rtklib \
+rtklib/Debug/rtklib/rcv \
 rtklib \
 rtklib/rcv \
 
