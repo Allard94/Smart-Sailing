@@ -38,7 +38,12 @@ CPP_DEPS += \
 %.o: ../%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
+
 	g++ -O0 -g3 -Wall -c -fmessage-length=0 -std=c++11 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+
+	#staan nogal specifieke dingen in Kay. Kan je ff kijken of ie het zo doet? Dan kan de regel eronder weg.
+	#g++ -I"/home/scubakay/workspace-ss/Smart-Sailing.git/rtklib" -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+
 	@echo 'Finished building: $<'
 	@echo ' '
 

@@ -1,4 +1,4 @@
 rtklib/rcv/novatel.o: ../rtklib/rcv/novatel.c \
- /home/allard/Documents/Piksi/rtklib/rtklib.h
+ /home/scubakay/workspace-ss/Smart-Sailing.git/rtklib/rtklib.h
 
-/home/allard/Documents/Piksi/rtklib/rtklib.h:
+/home/scubakay/workspace-ss/Smart-Sailing.git/rtklib/rtklib.h:
