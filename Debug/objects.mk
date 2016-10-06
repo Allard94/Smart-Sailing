@@ -4,5 +4,5 @@
 
 USER_OBJS :=
 
-LIBS := -lpthread -lserialport -lsbp
+LIBS := -lpthread -lswiftnav -lserialport -lsbp
 
