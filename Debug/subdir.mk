@@ -4,34 +4,25 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../ephemeris.cpp \
 ../main.cpp \
-../observation.cpp \
 ../port.cpp \
+../rtklib.cpp \
 ../sbp.cpp \
-../sbp_functions.cpp \
-../signal.cpp \
-../solution.cpp 
+../sbp_functions.cpp 
 
 OBJS += \
-./ephemeris.o \
 ./main.o \
-./observation.o \
 ./port.o \
+./rtklib.o \
 ./sbp.o \
-./sbp_functions.o \
-./signal.o \
-./solution.o 
+./sbp_functions.o 
 
 CPP_DEPS += \
-./ephemeris.d \
 ./main.d \
-./observation.d \
 ./port.d \
+./rtklib.d \
 ./sbp.d \
-./sbp_functions.d \
-./signal.d \
-./solution.d 
+./sbp_functions.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

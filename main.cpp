@@ -31,147 +31,76 @@ extern "C"
 #include <libswiftnav/ephemeris.h>
 }
 
-#include "ephemeris.h"
-#include "observation.h"
 #include "port.h"
+#include "rtklib.h"
 #include "sbp.h"
 
 using namespace std;
 
+/* Prints out how to use the program.
+ * Use -p 'serial port'.
+ */
 void usage(char *prog_name) {
   fprintf(stderr, "usage: %s [-p serial port]\n", prog_name);
 }
 
-void obsinit(obs_t *obs){
-	obsd_t data0={{0}};
-	obs->data = NULL;
-	if (!(obs->data=(obsd_t *)malloc(sizeof(obsd_t)*MAXOBS ))){
-		cout << "ERROR!" <<endl;
-	}
-	for (int i=0;i<64 ;i++) obs->data[i]=data0;
-	obs->nmax = 64;
-	for(int i = 0; i < obs->nmax; i++){
-		obs->data[i].rcv = 1;
-		obs->data[i].sat = 14;
-	}
-}
-
-void obsassign(obs_t *obs){
-	//obs->n = pos_llh.n_sats;
-	//obs->n = obs_dep_b.header.n_obs;
-//	obs->data->time = gpst2time((int)obs_dep_b.header.t.wn, (double)obs_dep_b.header.t.tow * 1000);
-//	for(int i = 0; i < obs->n; i++){
-//		obs->data[i].P[0] = obs_dep_b.obs[i].P;
-//		obs->data[i].L[0] = obs_dep_b.obs[i].L.i;
-//		obs->data[i].SNR[0] = obs_dep_b.obs[i].cn0;
-//		obs->data[i].sat = ephemeris_gps.common.sid.sat;
-//	}
-}
-
-//void initnav(nav_t *nav){
-//	peph_t peph0 = {0};
-//  nav->peph = NULL;
-//	if !(rnx->nav.eph =(eph_t  *)malloc(sizeof(eph_t )*MAXSAT ){
-//		freenav(nav, 8);
-//	nav->ne = 0;
-//}
-
 int main(int argc, char **argv)
 {
 
-  rtk_t rtk;
-  rtk.opt = prcopt_default;
-  obs_t obs;
-  nav_t nav;
-  sta_t sta;
-  rnxctr_t rnx;
-  obsinit(&obs);
-
-
-  rtk.opt.mode = 6;					/* Option mode:               	Kinematic Mode    */
-  rtk.opt.tropopt = 3;				/* Troposphere option:        	ZTD estimation    */
-  rtk.opt.dynamics = 1;				/* Dynamics mode:             	Velocity      */
-  rtk.opt.sateph = 1;				/* Satellite ephemeris/clock: 	Precise ephemeris */
-  rtk.opt.nf = 3;					/* number of frequencies		L1 + L2 + L5 */
-  //rtk.opt.posopt = 4;
-  //nav.peph
-  char oopt;
-  const char *rinexfile = "Local-20160928-135925.obs";
-  const char *sp3file = "igu19165_06.sp3";
-  int opt;
-
-
-
-  FILE * pFile;
-
-  rtkinit(&rtk, &rtk.opt);
-  init_rnxctr(&rnx);
-  sortobs(&rnx.obs);
-  uniqnav(&rnx.nav);
-  //initnav(&rnx.nav);
-  readsp3(sp3file, &nav, 1);
-
-  rtk.sol.rr[0] = -2700370;
-  rtk.sol.rr[1] = -4292500;
-  rtk.sol.rr[2] = 3855470;
-
-  obs.data->P[0] = 246669057;
-  obs.data->L[0] = 163269;
-  obs.data->SNR[0] = 179;
-  obs.data->time.time = 1475071165;
-  obs.data->time.sec = 0.60000000000000142;
-  rtkpos(&rtk, &obs.data[0], 9, &nav);
-  strncpy(rnx.opt, "-GLss -SYS=G", sizeof(rnx.opt));
-
-
-  //Latitude: 37.4303
-  //longtitude: -122.172
-  //height: 70.1352
-  readrnx(rinexfile, 1, &rnx.opt[0], &rnx.obs, &rnx.nav, &rnx.sta);
-  //pFile = fopen ("myfile.txt","w");
-  //pppoutsolstat(&rtk, 3, pFile);
-  //fclose(pFile);
-
-  if (argc <= 1) {
-    usage(argv[0]);
-    exit(EXIT_FAILURE);
-  }
-
-  while ((opt = getopt(argc, argv, "p:")) != -1) {
-      switch (opt) {
-        case 'p':
-          serial_port_name = (char *)calloc(strlen(optarg) + 1, sizeof(char));
-          if (!serial_port_name) {
-            fprintf(stderr, "Cannot allocate memory!\n");
-            exit(EXIT_FAILURE);
-          }
-          strcpy(serial_port_name, optarg);
-          break;
-        case 'h':
-          usage(argv[0]);
-          exit(EXIT_FAILURE);
-      }
+	int opt;
+	/* Checks if user put in 2 arguments. */
+    if (argc <= 1) {
+    	usage(argv[0]);
+    	exit(EXIT_FAILURE);
     }
 
-  check_port_name();
-  locate_port();
-  open_port();
-  setup_port();
+    /* sets serial port name. */
+    while ((opt = getopt(argc, argv, "p:")) != -1) {
+    	switch (opt) {
+        	case 'p':
+        		serial_port_name = (char *)calloc(strlen(optarg) + 1, sizeof(char));
+        		if (!serial_port_name) {
+        			fprintf(stderr, "Cannot allocate memory!\n");
+        			exit(EXIT_FAILURE);
+        		}
+        		strcpy(serial_port_name, optarg);
+        		break;
+        	case 'h':
+        		usage(argv[0]);
+        		exit(EXIT_FAILURE);
+    	}
+    }
 
-  //obs_setup;
-  sbp_setup();
+    check_port_name();
+    locate_port();
+    open_port();
+    setup_port();
 
-  while(1) {
-	  process_sbp();
+    sbp_setup();
 
+    nav_init(&nav);
+    obs_init(&obs);
+    rtkinit(&rtk, &rtk.opt);
 
-    //rtk.sol.rr[0] = pos_llh.lat;
-    //rtk.sol.rr[1] = pos_llh.lon;
-    //rtk.sol.rr[2] = pos_llh.height;
-    //rtkpos(&rtk, &obds, 3, &nav);
-    //obsassign(&obs);
-    //rtkpos(&rtk, &obs.data[0], obs.n, &nav);
-    sleep(1);
+    const char *sp3file = "igu19165_06.sp3";
+    readsp3(sp3file, &nav, 1);
+
+    double prev_tor = 0.0;
+
+    /* Keeps running until user quits program. */
+    while(1) {
+    	s8 ret = sbp_process(&sbp_state, &piksi_port_read);
+	    if (ret < 0){
+	    	printf("sbp_process error: %d\n", (int)ret);
+	    }
+	    /* Checks if previous epoch is not the same as current epoch */
+	    if(prev_tor!=tor.tow){
+	    	rtkpos(&rtk, &obs.data[0], 9, &nav);
+	    	obs_assign(&obs);
+	    	printmsg();
+	        prev_tor = tor.tow;
+	    }
+    sleep(0.5);
   }
 
   close_port();
@@ -180,6 +109,7 @@ int main(int argc, char **argv)
   return 0;
 }
 
+/* Program needs this to run. */
 #ifdef __cplusplus
 extern "C" {
 #endif

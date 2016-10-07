@@ -21,6 +21,7 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
 #define MSG_OBS_HEADER_SEQ_SHIFT 4u
 #define MSG_OBS_HEADER_SEQ_MASK ((1 << 4u) - 1)
 #define MSG_OBS_HEADER_MAX_SIZE MSG_OBS_HEADER_SEQ_MASK
