@@ -12,6 +12,7 @@
 extern "C" {
 #endif
 #include <libsbp/gnss_signal.h>
+#include <libsbp/navigation.h>
 #include <libsbp/observation.h>
 #include <libswiftnav/pvt.h>
 
