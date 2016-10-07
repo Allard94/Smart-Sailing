@@ -8,12 +8,26 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <libswiftnav/constants.h>
 #include <libswiftnav/signal.h>
 #ifdef __cplusplus
 }
 #endif
 
 #include "sbp_functions.h"
+
+void sbp_make_pos_llh(msg_pos_llh_t *pos_llh, const gnss_solution *soln, u8 flags)
+{
+  pos_llh->tow = round(soln->time.tow * 1e3);
+  pos_llh->lat = soln->pos_llh[0] * R2D;
+  pos_llh->lon = soln->pos_llh[1] * R2D;
+  pos_llh->height = soln->pos_llh[2];
+  /* TODO: fill in accuracy fields. */
+  pos_llh->h_accuracy = 0;
+  pos_llh->v_accuracy = 0;
+  pos_llh->n_sats = soln->n_used;
+  pos_llh->flags = flags;
+}
 
 gnss_signal_t sid_from_sbp(const sbp_gnss_signal_t from)
 {
