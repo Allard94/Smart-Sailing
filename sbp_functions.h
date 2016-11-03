@@ -31,8 +31,14 @@ extern "C" {
 #define MSG_OBS_SNR_MULTIPLIER ((float)4)
 #define MSG_OSB_LF_MULTIPLIER ((double) (1<<8))
 
+extern ephemeris_t es[255];
+
 void sbp_make_pos_llh(msg_pos_llh_t *pos_llh, const gnss_solution *soln, u8 flags);
 gnss_signal_t sid_from_sbp(const sbp_gnss_signal_t from);
+ephemeris_t *ephemeris_get(gnss_signal_t sid);
+void ephemeris_new(ephemeris_t *e);
+
+void unpack_ephemeris(const msg_ephemeris_dep_d_t *msg, ephemeris_t *e);
 void unpack_obs_header(const observation_header_t *msg, gps_time_t* t, u8* total, u8* count);
 void unpack_obs_content(const packed_obs_content_t *msg, double *P, double *L, double *snr, u16 *lock_counter, gnss_signal_t *sid);
 

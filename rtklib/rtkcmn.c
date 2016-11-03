@@ -3195,6 +3195,7 @@ extern double geodist(const double *rs, const double *rr, double *e)
     double r;
     int i;
     
+    double norm2 = norm(rs,3);
     if (norm(rs,3)<RE_WGS84) return -1.0;
     for (i=0;i<3;i++) e[i]=rs[i]-rr[i];
     r=norm(e,3);
