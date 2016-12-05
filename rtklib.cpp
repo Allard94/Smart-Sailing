@@ -10,6 +10,15 @@
 #include "sbp_functions.h"
 #include <iostream>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include <libswiftnav/ephemeris.h>
+#include <libswiftnav/time.h>
+#ifdef __cplusplus
+}
+#endif
+
 #include <math.h>
 
 nav_t nav;
@@ -55,8 +64,8 @@ void obs_assign(obs_t *obs){
 		obs->n = pos_ecef.n_sats;
 		obs->data[i].sat = nav_m[i].sid.sat;
 		obs->data[i].code[0] = nav_m[i].sid.code;
-		obs->data[i].L[0] = nav_m[i].carrier_phase;
-		obs->data[i].P[0] = nav_m[i].pseudorange;
+		obs->data[i].L[0] = nav_m[i].raw_carrier_phase;
+		obs->data[i].P[0] = nav_m[i].raw_pseudorange;
 		obs->data[i].D[0] = nav_m[i].raw_doppler;
 		obs->data[i].LLI[0] = nav_m[i].lock_counter;
 		obs->data[i].SNR[0] = nav_m[i].snr;
@@ -67,11 +76,12 @@ void obs_assign(obs_t *obs){
 /* Initializes rtklib processing options. */
 void rtk_opt_init(rtk_t * rtk){
 	rtk->opt = prcopt_default;
-	rtk->opt.mode = 6;					/* Option mode:               	Kinematic Mode    */
-	rtk->opt.tropopt = 3;				/* Troposphere option:        	ZTD estimation    */
-	rtk->opt.dynamics = 1;				/* Dynamics mode:             	Velocity          */
+	rtk->opt.mode = 6;					/* Option mode:               	Kinematic Mode      */
+	rtk->opt.tropopt = 3;				/* Troposphere option:        	ZTD estimation      */
 	rtk->opt.sateph = 0;				/* Satellite ephemeris/clock: 	Broadcast ephemeris */
-	rtk->opt.nf = 1;				    /* Number of frequencies:       L1				  */
+	rtk->opt.nf = 1;				    /* Number of frequencies:       L1				    */
+	//rtk->opt.ionoopt = 5;				/* Ionosphere option:			IONEX TEC model     */
+	rtk->opt.ionoopt = 1;
 }
 
 void rtk_sol_assign(rtk_t * rtk){
@@ -81,10 +91,11 @@ void rtk_sol_assign(rtk_t * rtk){
 }
 
 void nav_eph_assign(nav_t * nav){
-	nav->n = pos_ecef.n_sats;
-	for(uint8_t i = 0; i < pos_ecef.n_sats; i++){
+	int sats = 0;
+	for(uint8_t i = 0; i < pos_llh.n_sats; i++){
 		for(auto &e : ephemerisMap){
 			if(nav_m[i].sid.sat == e.second.sid.sat){
+				sats++;
 				nav->eph[i].tgd[0] = e.second.kepler.tgd;
 				nav->eph[i].crs = e.second.kepler.crs;
 				nav->eph[i].crc = e.second.kepler.crc;
@@ -122,6 +133,18 @@ void nav_eph_assign(nav_t * nav){
 			}
 		}
 	}
+	nav->n = sats;
+}
+
+void nav_iono_assign(nav_t * nav){
+	nav->ion_gps[0] = iono.a0;
+	nav->ion_gps[1] = iono.a1;
+	nav->ion_gps[2] = iono.a2;
+	nav->ion_gps[3] = iono.a3;
+	nav->ion_gps[4] = iono.b0;
+	nav->ion_gps[5] = iono.b1;
+	nav->ion_gps[6] = iono.b2;
+	nav->ion_gps[7] = iono.b3;
 }
 
 void obs_test_assign(obs_t * obs, int datanr){
@@ -134,15 +157,18 @@ void obs_test_assign(obs_t * obs, int datanr){
 		obs->data[i].code[0] = observations[datanr][i][1];
 		obs->data[i].L[0] = observations[datanr][i][2];
 		obs->data[i].P[0] = observations[datanr][i][3];
-		obs->data[i].D[0] = observations[datanr][i][4];
+		//obs->data[i].D[0] = observations[datanr][i][4];
 		obs->data[i].LLI[0] = observations[datanr][i][5];
 		obs->data[i].SNR[0] = observations[datanr][i][7];
 		obs->data[i].time = gpst2time(observations[datanr][i][15], observations[datanr][i][14]);
 	}
 }
 
-void nav_eph_test_assign(nav_t * nav, int datanr){
+void nav_eph_test_assign(nav_t * nav, obs_t * obs, int datanr){
 	nav->n = observations[datanr].size();
+	gps_time_t begin;
+	gps_time_t end;
+	double clock_rate_err;
 	for(uint8_t i = 0; i < observations[datanr].size(); i++){
 		for(int j = 0; j < ephemerides[datanr].size(); j++){
 			if(observations[datanr][i][0] == ephemerides[datanr][j][25]){
@@ -175,9 +201,28 @@ void nav_eph_test_assign(nav_t * nav, int datanr){
 				nav->eph[i].iodc = ephemerides[datanr][j][28];
 				nav->eph[i].fit = ephemerides[datanr][j][29];
 				nav->eph[i].sva = ephemerides[datanr][j][30];
+				begin.tow = ephemerides[datanr][j][19];
+				begin.wn = ephemerides[datanr][j][20];
+				end.tow = ephemerides[datanr][j][21];
+				end.wn = ephemerides[datanr][j][22];
+				double dt = gpsdifftime(&begin, &end);
+				clock_rate_err = ephemerides[datanr][j][17] + 2.0 * dt * ephemerides[datanr][j][18];
+				obs->data[i].D[0] = clock_rate_err * GPS_L1_HZ;
+				printf("doppler: %f\n", obs->data[i].D[0]);
 			}
 		}
 	}
+}
+
+void nav_iono_test_assign(nav_t * nav, int datanr){
+	nav->ion_gps[0] = ionosphere[datanr][0];
+	nav->ion_gps[1] = ionosphere[datanr][1];
+	nav->ion_gps[2] = ionosphere[datanr][2];
+	nav->ion_gps[3] = ionosphere[datanr][3];
+	nav->ion_gps[4] = ionosphere[datanr][4];
+	nav->ion_gps[5] = ionosphere[datanr][5];
+	nav->ion_gps[6] = ionosphere[datanr][6];
+	nav->ion_gps[7] = ionosphere[datanr][7];
 }
 
 void rtk_sol_test_assign(rtk_t * rtk, int datanr){

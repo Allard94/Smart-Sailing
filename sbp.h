@@ -30,6 +30,8 @@ extern "C" {
 
 extern msg_pos_ecef_t			 pos_ecef;
 extern msg_pos_llh_t      		 pos_llh;
+extern msg_baseline_ecef_t	     baseline_ecef;
+extern msg_iono_t				 iono;
 
 extern gps_time_t tor;
 extern sbp_state_t sbp_state;
@@ -47,6 +49,7 @@ extern std::vector<std::vector<double> > ecef_vel;
 extern std::vector<std::vector<double> > ned_vel;
 extern std::vector<std::vector<std::vector<double> > > observations;
 extern std::vector<std::vector<std::vector<double> > > ephemerides;
+extern std::vector<std::vector<double> > ionosphere;
 
 void ephemerisVector();
 void printmsg();

@@ -24,7 +24,6 @@ u32 piksi_port_read(u8 *buff, u32 n, void *context)
   u32 result;
 
   result = sp_blocking_read(piksi_port, buff, n, 0);
-
   return result;
 }
 

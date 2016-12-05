@@ -117,3 +117,4 @@ void unpack_obs_content(const packed_obs_content_t *msg, double *P, double *L, d
   *lock_counter = ((u16)msg->lock);
   *sid = sid_from_sbp(msg->sid);
 }
+

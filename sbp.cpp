@@ -15,7 +15,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include <libswiftnav/ephemeris.h>
 #include <libswiftnav/constants.h>
 #ifdef __cplusplus
 }
@@ -55,6 +55,7 @@ std::vector<std::vector<double> > ecef_pos;
 std::vector<std::vector<double> > llh_pos;
 //std::vector<std::vector<double> > ecef_vel;
 std::vector<std::vector<double> > ned_vel;
+std::vector<std::vector<double> > ionosphere;
 std::vector<std::vector<std::vector<double> > > observations;
 std::vector<std::vector<std::vector<double> > > ephemerides;
 
@@ -65,7 +66,9 @@ msg_pos_ecef_t			 pos_ecef;
 msg_pos_llh_t      		 pos_llh;
 msg_vel_ecef_t			 vel_ecef;
 msg_vel_ned_t			 vel_ned;
+msg_baseline_ecef_t      baseline_ecef;
 msg_obs_t				 obss;
+msg_iono_t				 iono;
 
 /* The callback nodes */
 static sbp_msg_callbacks_node_t eph_gps_node;
@@ -73,7 +76,9 @@ static sbp_msg_callbacks_node_t pos_ecef_node;
 static sbp_msg_callbacks_node_t pos_llh_node;
 static sbp_msg_callbacks_node_t vel_ecef_node;
 static sbp_msg_callbacks_node_t vel_ned_node;
+static sbp_msg_callbacks_node_t baseline_ecef_node;
 static sbp_msg_callbacks_node_t obs_node;
+static sbp_msg_callbacks_node_t iono_node;
 
 /* Prints messages */
 void printmsg(){
@@ -135,15 +140,22 @@ void ephemerisVector(){
 }
 
 bool validNrSats(){
+	int sats_found = 0;
 	for(int i = 0; i < pos_ecef.n_sats; i++){
 		for(auto &e : ephemerisMap){
 			if(nav_m[i].sid.sat == e.second.sid.sat){
+				sats_found++;
 				break;
 			}
 		}
+	}
+	if(sats_found == pos_ecef.n_sats){
+		return true;
+	}
+	else{
 		return false;
 	}
-	return true;
+
 }
 
 /* The ephemeris callback. */
@@ -175,7 +187,7 @@ void sbp_obs_callback(u16 sender_id, u8 len, u8 msg[], void *context)
    else if (prev_tor.tow != tor.tow ||
                prev_tor.wn != tor.wn ||
                prev_count + 1 != count) {
-      log_info("Dropped one of the observation packets! Skipping this sequence.");
+      log_info("Dropped one of the observation packets! Skipping this sequence.\ns");
       prev_count = -1;
       return;
     }
@@ -198,12 +210,27 @@ void sbp_obs_callback(u16 sender_id, u8 len, u8 msg[], void *context)
        unpack_obs_content(&obs[i], &nm->raw_pseudorange, &nm->raw_carrier_phase,
                           &nm->snr, &nm->lock_counter, &nm->sid);
 
+
+       //const ephemeris_t *ep = ephemeris_get(nm->sid);
+       //s8 ss_ret;
+	   //double clock_err;
+	   //double clock_rate_err;
+
+	   //ss_ret = calc_sat_state(ep, &nm->tot, nm->sat_pos, nm->sat_vel,
+	   //                        &clock_err, &clock_rate_err);
+	   //printf("ret: %d\n", ss_ret);
+
+       //nm->pseudorange = nm->raw_pseudorange + clock_err * GPS_C;
+	   //nm->carrier_phase = nm->raw_carrier_phase - clock_err * GPS_L1_HZ;
+
+	   /* Used in tdcp_doppler */
+	   //nm->doppler = clock_rate_err * GPS_L1_HZ;
+
        /* Set the time */
        nm->tot = tor;
        nm->tot.tow -= nm->raw_pseudorange / GPS_C;
        normalize_gps_time(&nm->tot);
 
-       //const ephemeris_t *e = ephemeris_get(nm->sid);
        nr_obs++;
      }
 }
@@ -219,6 +246,8 @@ void sbp_pos_ecef_callback(u16 sender_id, u8 len, u8 msg[], void *context)
 void sbp_pos_llh_callback(u16 sender_id, u8 len, u8 msg[], void *context)
 {
   pos_llh = *(msg_pos_llh_t *)msg;
+  //writecsv();
+  printf("sats: %u\n", pos_llh.n_sats);
 }
 
 void sbp_vel_ecef_callback(u16 sender_id, u8 len, u8 msg[], void *context)
@@ -229,6 +258,18 @@ void sbp_vel_ecef_callback(u16 sender_id, u8 len, u8 msg[], void *context)
 void sbp_vel_ned_callback(u16 sender_id, u8 len, u8 msg[], void *context)
 {
   vel_ned = *(msg_vel_ned_t *)msg;
+}
+
+void sbp_baseline_ecef_callback(u16 sender_id, u8 len, u8 msg[], void *context)
+{
+  baseline_ecef = *(msg_baseline_ecef_t *)msg;
+}
+
+/* The Ionospheric position callback */
+void sbp_iono_callback(u16 sender_id, u8 len, u8 msg[], void *context)
+{
+    iono = *(msg_iono_t *)msg;
+    printf("a0: %f\n", iono.a0);
 }
 
 /* Initializes the sbp_state and registers callbacks. */
@@ -247,20 +288,25 @@ void sbp_setup(void){
     		              NULL, &vel_ecef_node);
     sbp_register_callback(&sbp_state, SBP_MSG_VEL_NED, &sbp_vel_ned_callback,
     	                  NULL, &vel_ned_node);
+    sbp_register_callback(&sbp_state, SBP_MSG_BASELINE_ECEF, &sbp_baseline_ecef_callback,
+        	              NULL, &baseline_ecef_node);
+    sbp_register_callback(&sbp_state, SBP_MSG_IONO, &sbp_iono_callback,
+            	          NULL, &iono_node);
 
 }
 
 void writecsv(){
 	int nr_of_ephs = 0;
 	std::ofstream file;
-	file.open("test6.csv", std::ofstream::out | std::ofstream::app);
-	file << pos_ecef.x << "," << pos_ecef.y << "," << pos_ecef.z << "," << (int)pos_ecef.n_sats << ", " << pos_ecef.tow << "\n";
+	file.open("testBultPPP.csv", std::ofstream::out | std::ofstream::app);
+	file << pos_ecef.x << "," << pos_ecef.y << "," << pos_ecef.z << "," << (int)pos_ecef.n_sats << "," << pos_ecef.tow << "\n";
 	file << pos_llh.lat << "," << pos_llh.lon << "," << pos_llh.height << "," << pos_llh.tow << "\n";
 	file << vel_ecef.x << "," << vel_ecef.y << "," << vel_ecef.z << "," << vel_ecef.tow << "\n";
 	file << vel_ned.n << "," << vel_ned.e << "," << vel_ned.d << "," << vel_ned.tow << "\n";
 	for(int i = 0; i < pos_llh.n_sats; i++){
 		file << nav_m[i].sid.sat << "," << nav_m[i].sid.code << "," << nav_m[i].raw_carrier_phase << "," << nav_m[i].raw_pseudorange << ",";
 		file << nav_m[i].raw_doppler << "," << nav_m[i].lock_counter << "," <<nav_m[i].lock_time << "," << nav_m[i].snr << ",";
+		file << nav_m[i].pseudorange << "," << nav_m[i].carrier_phase << "," <<nav_m[i].doppler << ",";
 		for(int j = 0; j < 3; j++){
 			file << nav_m[i].sat_pos[j] << "," << nav_m[i].sat_vel[j] << ",";
 		}
@@ -356,9 +402,6 @@ void readcsv(){
 			}
 			for(int i = 4; i < maxrcvsats + 4; i++){
 				if(linenr % modvalue == i){
-					//if(data.size() == 0){
-					//	break;
-					//}
 					if(std::stoi(data[0]) == 0){
 						break;
 					}
@@ -378,9 +421,6 @@ void readcsv(){
 			for(int i = maxrcvsats + 4; i < maxsats + maxrcvsats + 4; i++){
 
 				if(linenr % modvalue == i){
-					//if(data.size() == 0){
-					//	break;
-					//}
 					if(std::stoi(data[0]) == 0){
 						break;
 					}
