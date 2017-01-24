@@ -1629,7 +1629,6 @@ extern double dms2deg(const double *dms)
 extern void ecef2pos(const double *r, double *pos)
 {
     double e2=FE_WGS84*(2.0-FE_WGS84),r2=dot(r,r,2),z,zk,v=RE_WGS84,sinp;
-    
     for (z=r[2],zk=0.0;fabs(z-zk)>=1E-4;) {
         zk=z;
         sinp=z/sqrt(r2+z*z);
@@ -3196,6 +3195,7 @@ extern double geodist(const double *rs, const double *rr, double *e)
     double r;
     int i;
     
+    double norm2 = norm(rs,3);
     if (norm(rs,3)<RE_WGS84) return -1.0;
     for (i=0;i<3;i++) e[i]=rs[i]-rr[i];
     r=norm(e,3);

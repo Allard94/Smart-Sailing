@@ -892,7 +892,7 @@ static int res_ppp(int iter, const obsd_t *obs, int n, const double *rs,
     for (i=0;i<3;i++) rr[i]=x[i];
     
     /* earth tides correction */
-    if (opt->tidecorr) {
+     if (opt->tidecorr) {
         tideopt=opt->tidecorr==1?1:7; /* 1:solid, 2:solid+otl+pole */
         
         tidedisp(gpst2utc(obs[0].time),rr,tideopt,&nav->erp,opt->odisp[0],

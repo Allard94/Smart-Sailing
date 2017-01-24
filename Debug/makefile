@@ -9,6 +9,9 @@ RM := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include rtklib/rcv/subdir.mk
+-include rtklib/Debug/rtklib/rcv/subdir.mk
+-include rtklib/Debug/rtklib/subdir.mk
+-include rtklib/Debug/subdir.mk
 -include rtklib/subdir.mk
 -include subdir.mk
 -include objects.mk

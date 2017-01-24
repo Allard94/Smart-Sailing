@@ -398,7 +398,7 @@ static eph_t *seleph(gtime_t time, int sat, int iode, const nav_t *nav)
     tmin=tmax+1.0;
     
     for (i=0;i<nav->n;i++) {
-        if (nav->eph[i].sat!=sat) continue;
+         if (nav->eph[i].sat!=sat) continue;
         if (iode>=0&&nav->eph[i].iode!=iode) continue;
         if ((t=fabs(timediff(nav->eph[i].toe,time)))>tmax) continue;
         if (iode>=0) return nav->eph+i;
